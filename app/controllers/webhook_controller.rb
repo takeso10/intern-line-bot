@@ -27,7 +27,6 @@ class WebhookController < ApplicationController
         when Line::Bot::Event::MessageType::Text
           message = {
             type: 'text',
-            ##text: reply_to_message()
             text: reply_to_message(event.message['text'])
           }
           client.reply_message(event['replyToken'], message)
