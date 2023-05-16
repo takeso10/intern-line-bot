@@ -1,4 +1,5 @@
 require 'line/bot'
+require 'openai'
 
 class WebhookController < ApplicationController
   protect_from_forgery except: [:callback] # CSRF対策無効化
@@ -26,16 +27,29 @@ class WebhookController < ApplicationController
         when Line::Bot::Event::MessageType::Text
           message = {
             type: 'text',
-            text: event.message['text']
+            ##text: reply_to_message()
+            text: reply_to_message(event.message['text'])
           }
           client.reply_message(event['replyToken'], message)
         when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
           response = client.get_message_content(event.message['id'])
           tf = Tempfile.open("content")
-          tf.write(response.body)
+          tf.write(resposnse.body)
         end
       end
     }
     head :ok
   end
+
+  def reply_to_message(text)
+    openai = OpenAI::Client.new(access_token: ENV["OPENAI_API_KEY"])
+    response = openai.chat(
+      parameters:{
+        model: "gpt-3.5-turbo",
+        messages: [{role: "user", content: text}] 
+      }
+    )
+    return response.dig("choices",0,"message","content")
+  end
+
 end
